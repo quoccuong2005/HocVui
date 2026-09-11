@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Classroom, Student, Question, PickerMode, SubjectId, Difficulty } from '@/types';
+import { Classroom, Student, Question, PickerMode, SubjectId, Difficulty, Topic } from '@/types';
 import { LuckyWheel } from './LuckyWheel';
 import { MysteryBox } from './MysteryBox';
 import { CardPicker } from './CardPicker';
@@ -33,6 +33,7 @@ interface InteractiveStageProps {
   onAddClass?: (newClass: Classroom) => void;
   currentClass: Classroom;
   questions: Question[];
+  topics: Topic[];
   calledStudentIds: string[];
   onUpdateCalledStudentIds: (ids: string[]) => void;
   onAwardStars: (studentId: string, count: number) => void;
@@ -45,6 +46,7 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
   onAddClass,
   currentClass,
   questions,
+  topics,
   calledStudentIds,
   onUpdateCalledStudentIds,
   onAwardStars,
@@ -62,7 +64,14 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<SubjectId | 'all'>('all');
+  const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>('all');
   const [selectedDifficultyFilter, setSelectedDifficultyFilter] = useState<Difficulty | 'all'>('all');
+
+  // Khi đổi môn học → reset chủ đề
+  const handleSubjectChange = (subjectId: SubjectId | 'all') => {
+    setSelectedSubjectFilter(subjectId);
+    setSelectedTopicFilter('all');
+  };
 
   // Lọc học sinh có thể gọi (loại trừ các bạn đã gọi nếu bật NoRepeat)
   const availableStudents = currentClass?.students.filter((s) => {
@@ -103,6 +112,12 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
     // Lọc theo môn học nếu có
     if (selectedSubjectFilter !== 'all') {
       pool = pool.filter((q) => q.subjectId === selectedSubjectFilter);
+    }
+
+    // Lọc theo chủ đề nếu có
+    if (selectedTopicFilter !== 'all') {
+      const topicFiltered = pool.filter((q) => q.topic.trim() === selectedTopicFilter);
+      if (topicFiltered.length > 0) pool = topicFiltered;
     }
 
     // Lọc theo CẤP ĐỘ nếu giáo viên chỉ định (Mức 1, Mức 2, Mức 3)
@@ -454,7 +469,7 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
 
               <div className="grid grid-cols-2 gap-1.5">
                 <button
-                  onClick={() => setSelectedSubjectFilter('all')}
+                  onClick={() => handleSubjectChange('all')}
                   className={`p-2 rounded-xl text-xs font-black text-left border transition-all ${
                     selectedSubjectFilter === 'all'
                       ? 'bg-slate-800 text-white border-slate-800'
@@ -467,7 +482,7 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
                 {SUBJECTS.slice(0, 5).map((sub) => (
                   <button
                     key={sub.id}
-                    onClick={() => setSelectedSubjectFilter(sub.id)}
+                    onClick={() => handleSubjectChange(sub.id)}
                     className={`p-2 rounded-xl text-xs font-black text-left border transition-all truncate ${
                       selectedSubjectFilter === sub.id
                         ? 'bg-emerald-600 text-white border-emerald-600'
@@ -480,11 +495,91 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
               </div>
             </div>
 
+            {/* Chọn Chủ Đề — chỉ hiện khi đã chọn môn cụ thể */}
+            {selectedSubjectFilter !== 'all' && (() => {
+              // Lọc chủ đề theo môn học VÀ khối lớp hiện tại
+              const subjectTopics = topics.filter(
+                (t) => t.subjectId === selectedSubjectFilter && t.grade === currentClass.grade
+              );
+              // Nếu không có topic theo khối, thử lấy từ câu hỏi trực tiếp (fallback)
+              const topicNamesFromQuestions = [
+                ...new Set(
+                  questions
+                    .filter((q) => q.subjectId === selectedSubjectFilter && q.grade === currentClass.grade)
+                    .map((q) => q.topic.trim())
+                ),
+              ];
+              // Dùng topicNamesFromQuestions làm nguồn chính xác nhất
+              if (topicNamesFromQuestions.length === 0) return null;
+              return (
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-black text-slate-500 uppercase flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> 2. Chủ đề:
+                    </span>
+                    {selectedTopicFilter !== 'all' && (
+                      <button
+                        onClick={() => setSelectedTopicFilter('all')}
+                        className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
+                      >
+                        ✕ Bỏ chọn
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-0.5 scrollbar-thin">
+                    <button
+                      onClick={() => setSelectedTopicFilter('all')}
+                      className={`w-full px-3 py-1.5 rounded-xl text-xs font-black text-left border transition-all ${
+                        selectedTopicFilter === 'all'
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      📚 Tất cả chủ đề
+                    </button>
+                    {topicNamesFromQuestions.map((topicName) => {
+                      // Đếm câu hỏi theo đúng môn + khối + chủ đề
+                      const count = questions.filter(
+                        (q) =>
+                          q.subjectId === selectedSubjectFilter &&
+                          q.grade === currentClass.grade &&
+                          q.topic.trim() === topicName
+                      ).length;
+                      // Tên hiển thị: ưu tiên từ topics list, fallback là topicName
+                      const displayName =
+                        subjectTopics.find((t) => t.name.trim() === topicName)?.name ?? topicName;
+                      return (
+                        <button
+                          key={topicName}
+                          onClick={() => setSelectedTopicFilter(topicName)}
+                          className={`w-full px-3 py-1.5 rounded-xl text-xs font-black text-left border transition-all flex items-center justify-between gap-1 ${
+                            selectedTopicFilter === topicName
+                              ? 'bg-emerald-500 text-white border-emerald-500'
+                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-emerald-50 hover:border-emerald-200'
+                          }`}
+                        >
+                          <span className="truncate">📖 {displayName}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${
+                            selectedTopicFilter === topicName
+                              ? 'bg-white/25 text-white'
+                              : 'bg-slate-200 text-slate-600'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* PHÂN BIỆT CẤP ĐỘ (MỨC 1, MỨC 2, MỨC 3) */}
             <div className="pt-2 border-t border-slate-100">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-black text-slate-500 uppercase flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> 2. Cấp độ câu hỏi:
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" /> {selectedSubjectFilter !== 'all' ? '3.' : '2.'} Cấp độ câu hỏi:
                 </span>
                 <span className="text-[11px] font-bold text-slate-400">
                   Phân hóa học sinh

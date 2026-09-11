@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Classroom, Question } from '@/types';
+import { Classroom, Question, Topic } from '@/types';
 import { StorageService } from '@/lib/storage';
 import { Navbar } from '@/components/Navbar';
 import { InteractiveStage } from '@/components/InteractiveSuite/InteractiveStage';
@@ -17,6 +17,7 @@ export default function Home() {
   const [classrooms, setClassrooms] = useState<Classroom[]>([]);
   const [activeClassId, setActiveClassId] = useState<string>('class-3a');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [calledStudentIds, setCalledStudentIds] = useState<string[]>([]);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -26,6 +27,7 @@ export default function Home() {
     const loadedClassrooms = StorageService.getClassrooms();
     const loadedActiveId = StorageService.getActiveClassId();
     const loadedQuestions = StorageService.getQuestions();
+    const loadedTopics = StorageService.getTopics();
     
     // Đảm bảo activeClassId hợp lệ
     const validId = loadedClassrooms.some((c) => c.id === loadedActiveId)
@@ -37,6 +39,7 @@ export default function Home() {
     setClassrooms(loadedClassrooms);
     setActiveClassId(validId);
     setQuestions(loadedQuestions);
+    setTopics(loadedTopics);
     setCalledStudentIds(loadedCalled);
   }, []);
 
@@ -87,11 +90,13 @@ export default function Home() {
     const loadedClassrooms = StorageService.getClassrooms();
     const loadedActiveId = StorageService.getActiveClassId();
     const loadedQuestions = StorageService.getQuestions();
+    const loadedTopics = StorageService.getTopics();
     const loadedCalled = StorageService.getCalledStudentIds(loadedActiveId);
 
     setClassrooms(loadedClassrooms);
     setActiveClassId(loadedActiveId);
     setQuestions(loadedQuestions);
+    setTopics(loadedTopics);
     setCalledStudentIds(loadedCalled);
   };
 
@@ -136,6 +141,7 @@ export default function Home() {
               }}
               currentClass={currentClass}
               questions={questions}
+              topics={topics}
               calledStudentIds={calledStudentIds}
               onUpdateCalledStudentIds={handleUpdateCalledStudentIds}
               onAwardStars={handleAwardStars}
