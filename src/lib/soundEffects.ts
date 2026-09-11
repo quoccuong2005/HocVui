@@ -178,15 +178,53 @@ class SoundManager {
     osc.stop(ctx.currentTime + 0.4);
   }
 
-  // Phát âm đọc tên (Text-to-Speech)
+  // Tìm giọng Tiếng Việt tốt nhất từ danh sách voices
+  private pickVietnameseVoice(): SpeechSynthesisVoice | null {
+    const voices = window.speechSynthesis.getVoices();
+    // Ưu tiên: giọng vi-VN online của Google > bất kỳ vi-VN nào > vi nào
+    const online = voices.find(v => v.lang === 'vi-VN' && v.name.toLowerCase().includes('google'));
+    if (online) return online;
+    const exact = voices.find(v => v.lang === 'vi-VN');
+    if (exact) return exact;
+    const loose = voices.find(v => v.lang.startsWith('vi'));
+    return loose ?? null;
+  }
+
+  // Phát âm đọc tên (Text-to-Speech) — ưu tiên giọng Tiếng Việt
   public speakText(text: string) {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'vi-VN';
-    utterance.rate = 1.0;
-    utterance.pitch = 1.1;
-    window.speechSynthesis.speak(utterance);
+
+    const doSpeak = () => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.05;
+
+      const viVoice = this.pickVietnameseVoice();
+      if (viVoice) {
+        utterance.voice = viVoice;
+      }
+      // Nếu không tìm thấy giọng Việt, vẫn giữ lang='vi-VN' để trình duyệt
+      // tự chọn giọng phù hợp nhất có thể. Máy tính cần cài thêm
+      // gói giọng đọc Tiếng Việt (Windows: Cài đặt → Thời gian & Ngôn ngữ
+      // → Giọng nói → Thêm giọng nói → Tiếng Việt).
+
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Chrome/Edge tải danh sách giọng bất đồng bộ — cần chờ
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.onvoiceschanged = null;
+        doSpeak();
+      };
+      // Fallback: nếu sự kiện không bao giờ bắn (Firefox/Safari) thì cứ speak
+      setTimeout(doSpeak, 200);
+    }
   }
 }
 
