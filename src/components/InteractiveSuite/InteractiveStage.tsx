@@ -479,7 +479,7 @@ export const InteractiveStage: React.FC<InteractiveStageProps> = ({
                   🌈 Tất cả môn
                 </button>
 
-                {SUBJECTS.slice(0, 5).map((sub) => (
+                {SUBJECTS.map((sub) => (
                   <button
                     key={sub.id}
                     onClick={() => handleSubjectChange(sub.id)}

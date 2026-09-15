@@ -31,10 +31,38 @@ export const SUBJECTS: Subject[] = [
   },
   {
     id: 'dao_duc',
-    name: 'Đạo đức & Kỹ năng',
+    name: 'Đạo đức',
     icon: 'HeartHandshake',
     color: '#FF6B8B',
     badgeBg: 'bg-pink-100 text-pink-800 border-pink-200',
+  },
+  {
+    id: 'khoa_hoc',
+    name: 'Khoa học',
+    icon: 'FlaskConical',
+    color: '#2A9D8F',
+    badgeBg: 'bg-teal-100 text-teal-800 border-teal-200',
+  },
+  {
+    id: 'lich_su_dia_ly',
+    name: 'Lịch sử và Địa lý',
+    icon: 'Globe2',
+    color: '#E76F51',
+    badgeBg: 'bg-rose-100 text-rose-800 border-rose-200',
+  },
+  {
+    id: 'hoat_dong_trai_nghiem',
+    name: 'Hoạt động trải nghiệm',
+    icon: 'Compass',
+    color: '#F4A261',
+    badgeBg: 'bg-orange-100 text-orange-800 border-orange-200',
+  },
+  {
+    id: 'cong_nghe',
+    name: 'Công nghệ',
+    icon: 'Cpu',
+    color: '#457B9D',
+    badgeBg: 'bg-sky-100 text-sky-800 border-sky-200',
   },
 ];
 

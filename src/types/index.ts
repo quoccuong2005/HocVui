@@ -22,7 +22,17 @@ export interface Classroom {
   updatedAt: string;
 }
 
-export type SubjectId = 'toan' | 'tieng_viet' | 'tnxh' | 'tieng_anh' | 'dao_duc' | 'tin_hoc';
+export type SubjectId =
+  | 'toan'
+  | 'tieng_viet'
+  | 'tnxh'
+  | 'tieng_anh'
+  | 'dao_duc'
+  | 'tin_hoc'
+  | 'khoa_hoc'
+  | 'lich_su_dia_ly'
+  | 'hoat_dong_trai_nghiem'
+  | 'cong_nghe';
 
 export interface Subject {
   id: SubjectId;
